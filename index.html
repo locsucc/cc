@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hearth — Không gian Gia đình</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#232b2b; --sand:#F4EFE6; --sand-2:#EAE2D2; --teal:#2E5254; --teal-2:#3F6B6D;
+    --sage:#8FA98F; --coral:#C4694F; --line:#D8CFBC; --white:#FFFFFF;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#EDE7DA; --sand:#1B211F; --sand-2:#242B28; --teal:#7FB0AC; --teal-2:#5F8E8B;
+      --sage:#8FA98F; --coral:#E58465; --line:#3A423E; --white:#232B2B;
+    }
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+  *{box-sizing:border-box;}
+  body{
+    margin:0; height:100%; background:var(--sand); color:var(--ink);
+    font-family:'Inter',sans-serif; display:flex; flex-direction:column;
+  }
+
+  /* --- Màn hình Đăng nhập / Không gian gia đình --- */
+  #authOverlay{
+    position:fixed; top:0; left:0; width:100%; height:100%; background:var(--sand);
+    display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;
+  }
+  .auth-card{
+    background:var(--white); border:1px solid var(--line); border-radius:16px;
+    padding:30px; width:100%; max-width:400px; box-shadow:0 8px 24px rgba(0,0,0,0.06);
+  }
+  .auth-card h2{ font-family:'Fraunces',serif; font-size:24px; margin-top:0; color:var(--teal); text-align:center; }
+  .auth-card p{ font-size:13.5px; color:var(--teal-2); text-align:center; margin-bottom:20px; }
+  .auth-field{ margin-bottom:14px; }
+  .auth-field label{ display:block; font-size:13px; color:var(--teal-2); margin-bottom:6px; font-weight:500; }
+  .auth-field input, .auth-field select{
+    width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--line);
+    background:var(--sand); color:var(--ink); font-family:inherit; font-size:14.5px;
+  }
+  .auth-field input:focus, .auth-field select:focus{ outline:2px solid var(--teal); outline-offset:1px; background:var(--white); }
+  .auth-btn{
+    width:100%; padding:12px; border-radius:100px; border:none; background:var(--teal);
+    color:var(--sand); font-size:15px; font-weight:600; cursor:pointer; margin-top:10px;
+    transition:opacity 0.15s ease;
+  }
+  .auth-btn:hover{ opacity:0.9; }
+
+  /* --- Layout chính --- */
+  header{
+    padding:16px 20px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    flex-shrink:0; background:var(--white);
+  }
+  header h1{
+    font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin:0;
+    letter-spacing:-0.01em; color:var(--teal);
+  }
+  header .header-right{ display:flex; align-items:center; gap:10px; }
+  header .user-badge{ font-size:12.5px; color:var(--teal-2); background:var(--sand); padding:4px 10px; border-radius:100px; border:1px solid var(--line); }
+  .logout-btn{ background:none; border:none; color:var(--coral); font-size:12.5px; cursor:pointer; font-weight:500; padding:4px; }
+
+  main{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; display:none; flex-direction:column; }
+  main.active{ display:flex; }
+  section{ display:none; padding:20px; max-width:640px; margin:0 auto; width:100%; }
+  section.active{ display:block; }
+ 
+  /* --- Không gian AI Lắng --- */
+  .listener-picker{ display:flex; gap:8px; overflow-x:auto; padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid var(--line);}
+  .listener-chip{
+    flex-shrink:0; padding:7px 14px; border-radius:100px; border:1px solid var(--line);
+    background:var(--white); font-size:13px; cursor:pointer; color:var(--ink);
+    font-family:inherit; transition:all 0.15s ease;
+  }
+  .listener-chip.active{ background:var(--teal); border-color:var(--teal); color:var(--sand); }
+  
+  .chat-header-bar{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;
+  }
+  .mode-note{ font-size:12.5px; color:var(--teal-2); margin:0; }
+  .reset-btn{
+    background:none; border:1px solid var(--line); color:var(--teal-2);
+    padding:4px 10px; border-radius:100px; font-size:12px; cursor:pointer; font-family:inherit;
+    transition:all 0.2s ease;
+  }
+  .reset-btn:hover{ background:var(--sand-2); color:var(--coral); border-color:var(--coral); }
+
+  .chat-log{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; min-height:180px; }
+  
+  .bubble-row{ display:flex; align-items:center; gap:8px; }
+  .bubble-row.ai{ align-self:flex-start; max-width:85%; }
+  .bubble-row.me{ align-self:flex-end; max-width:85%; justify-content:flex-end; }
+  .bubble{ padding:10px 14px; border-radius:14px; font-size:14.5px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; }
+  .bubble.ai{ background:var(--white); border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .bubble.me{ background:var(--teal); color:var(--sand); border-bottom-right-radius:4px; }
+
+  .err-badge{
+    position:relative; flex-shrink:0; width:20px; height:20px; border-radius:50%;
+    background:var(--coral); color:var(--sand); font-size:12px; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center; cursor:help; user-select:none;
+  }
+  .err-badge::after{
+    content:attr(data-error);
+    position:absolute; bottom:calc(100% + 8px); left:0;
+    width:max-content; max-width:250px; padding:8px 10px; border-radius:8px;
+    background:var(--ink); color:var(--sand); font-size:12px; font-weight:400;
+    line-height:1.4; white-space:normal; box-shadow:0 4px 12px rgba(0,0,0,0.18);
+    opacity:0; visibility:hidden; transition:opacity 0.15s ease; pointer-events:none; z-index:20;
+  }
+  .err-badge:hover::after{ opacity:1; visibility:visible; }
+
+  .chat-input{ display:flex; gap:8px; }
+  .chat-input input{
+    flex:1; padding:11px 14px; border-radius:100px; border:1px solid var(--line);
+    background:var(--white); color:var(--ink); font-size:14.5px; font-family:inherit;
+  }
+  .chat-input input:focus{ outline:2px solid var(--teal); outline-offset:1px; }
+  .round-btn{
+    width:42px; height:42px; border-radius:50%; border:none; background:var(--teal);
+    color:var(--sand); font-size:16px; cursor:pointer; flex-shrink:0;
+    transition:transform 0.15s ease, opacity 0.15s ease;
+  }
+  .round-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .voice-btn{ background:var(--coral); }
+  .voice-btn.recording{ animation:pulseVoice 1.2s infinite ease-in-out; }
+  .voice-status{ font-size:12.5px; line-height:1.4; color:var(--teal-2); padding:0 6px 8px; }
+  .voice-status.error{ color:var(--coral); }
+  @keyframes pulseVoice{
+    0%, 100% { transform:scale(1); }
+    50% { transform:scale(1.12); box-shadow:0 0 0 6px rgba(196,105,79,0.25); }
+  }
+ 
+  /* --- Nhật ký --- */
+  .journal-entry{ margin-bottom:18px; }
+  .journal-entry label{ display:block; font-size:13px; color:var(--teal-2); margin-bottom:6px; }
+  textarea{
+    width:100%; min-height:110px; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+    background:var(--white); color:var(--ink); font-family:inherit; font-size:14.5px; resize:vertical;
+  }
+  textarea:focus{ outline:2px solid var(--teal); outline-offset:1px; }
+  .save-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .save-btn{
+    padding:10px 18px; border-radius:100px; border:none; background:var(--teal);
+    color:var(--sand); font-size:14px; cursor:pointer; font-family:inherit; font-weight:500;
+  }
+  .share-toggle{ font-size:13px; color:var(--teal-2); display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .past-entries{ margin-top:24px; border-top:1px solid var(--line); padding-top:16px; }
+  .past-entries h3{ font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin:0 0 10px; }
+  .entry-card{ background:var(--white); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; font-size:14px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; }
+  .entry-card time{ display:block; font-size:12px; color:var(--teal-2); margin-bottom:4px; }
+ 
+  /* --- Cộng đồng gia đình --- */
+  .post{ background:var(--white); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+  .post .who{ font-size:13px; font-weight:600; color:var(--teal); margin-bottom:4px; display:flex; justify-content:space-between; }
+  .post .who span{ font-size:11.5px; font-weight:400; color:var(--teal-2); }
+  .post p{ margin:0; font-size:14.5px; line-height:1.55; white-space:pre-wrap; word-wrap:break-word; }
+  .composer{ display:flex; gap:8px; margin-bottom:18px; }
+  .composer input{ flex:1; padding:11px 14px; border-radius:100px; border:1px solid var(--line); background:var(--white); color:var(--ink); font-family:inherit; font-size:14.5px; }
+  .composer input:focus{ outline:2px solid var(--teal); outline-offset:1px; }
+ 
+  nav{
+    display:flex; border-top:1px solid var(--line); background:var(--white); flex-shrink:0;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  nav button{
+    flex:1; padding:12px 4px 10px; background:none; border:none; cursor:pointer;
+    font-family:'Inter',sans-serif; font-size:12px; color:var(--teal-2); display:flex;
+    flex-direction:column; align-items:center; gap:4px;
+  }
+  nav button .ic{ font-size:19px; }
+  nav button.active{ color:var(--teal); font-weight:600; }
+</style>
+</head>
+<body>
+
+<!-- MÀN HÌNH ĐĂNG NHẬP & TẠO KHÔNG GIAN GIA ĐÌNH -->
+<div id="authOverlay">
+  <div class="auth-card">
+    <h2>Hearth — Gia đình</h2>
+    <p>Đăng nhập để kết nối không gian trò chuyện của riêng gia đình bạn</p>
+    <form id="authForm">
+      <div class="auth-field">
+        <label for="userName">Tên của bạn</label>
+        <input type="text" id="userName" placeholder="Ví dụ: Minh, Mẹ Hoa, Ba Hùng..." required>
+      </div>
+      <div class="auth-field">
+        <label for="userRole">Vai trò trong gia đình</label>
+        <select id="userRole">
+          <option value="Con cái">Con cái</option>
+          <option value="Cha/Mẹ">Cha / Mẹ</option>
+          <option value="Thành viên khác">Thành viên khác trong gia đình</option>
+        </select>
+      </div>
+      <div class="auth-field">
+        <label for="familyCode">Mã không gian gia đình</label>
+        <input type="text" id="familyCode" placeholder="Ví dụ: giadinhminhha (Dùng chung cho cả nhà)" required>
+      </div>
+      <button type="submit" class="auth-btn">Vào không gian gia đình</button>
+    </form>
+  </div>
+</div>
+ 
+<header>
+  <h1>Hearth <span id="headerFamilyName" style="font-size:13px; font-weight:400; color:var(--teal-2);"></span></h1>
+  <div class="header-right">
+    <span class="user-badge" id="headerUserBadge"></span>
+    <button class="logout-btn" id="logoutBtn" title="Đổi tài khoản">Đăng xuất</button>
+  </div>
+</header>
+ 
+<main id="mainAppContainer">
+  <section id="listen" class="active">
+    <div class="listener-picker">
+      <button class="listener-chip active" data-mode="checkin">Trò chuyện hằng ngày</button>
+      <button class="listener-chip" data-mode="mediator">Giải quyết mâu thuẫn</button>
+      <button class="listener-chip" data-mode="gratitude">Mong muốn/ Nhắc nhở</button>
+    </div>
+    <div class="chat-header-bar">
+      <p class="mode-note" id="modeNote">Lắng nghe và thấu hiểu.</p>
+      <button class="reset-btn" id="resetChatBtn" title="Xóa đoạn chat chế độ này">🔄 Xóa hội thoại</button>
+    </div>
+    <div class="chat-log" id="chatLog"></div>
+    <div class="voice-status" id="voiceStatus" role="status" aria-live="polite" style="display:none"></div>
+    <div class="chat-input">
+      <input type="text" id="chatInput" placeholder="Nhập tin nhắn hoặc dùng giọng nói…" aria-label="Message">
+      <button class="round-btn voice-btn" id="voiceBtn" title="Nhập bằng giọng nói" aria-label="Voice input">🎙</button>
+      <button class="round-btn" id="sendBtn" title="Gửi tin nhắn" aria-label="Send">↑</button>
+    </div>
+  </section>
+ 
+  <section id="journal">
+    <div class="journal-entry">
+      <label for="journalText">Hôm nay bạn thấy thế nào?</label>
+      <textarea id="journalText" placeholder="Nói ra suy nghĩ của bạn..."></textarea>
+    </div>
+    <div class="save-row">
+      <button class="save-btn" id="journalSave">Lưu nhật ký</button>
+      <label class="share-toggle"><input type="checkbox" id="journalShare"> Chia sẻ với gia đình</label>
+    </div>
+    <div class="past-entries">
+      <h3>Nhật ký đã lưu</h3>
+      <div id="entryList"></div>
+    </div>
+  </section>
+ 
+  <section id="community">
+    <div class="composer">
+      <input type="text" id="postInput" placeholder="Chia sẻ lời nhắn hoặc khoảnh khắc với gia đình...">
+      <button class="round-btn" id="postBtn" title="Đăng bài">↑</button>
+    </div>
+    <div id="feed"></div>
+  </section>
+</main>
+ 
+<nav>
+  <button class="active" data-target="listen"><span class="ic">💬</span>AI Lắng</button>
+  <button data-target="journal"><span class="ic">📔</span>Nhật ký</button>
+  <button data-target="community"><span class="ic">🏡</span>Cộng đồng nhà</button>
+</nav>
+ 
+<script>
+  // Đảm bảo toàn bộ mã chạy an toàn sau khi DOM đã tải xong
+  document.addEventListener('DOMContentLoaded', () => {
+
+    // ---- CẤU HÌNH GEMINI API ----
+    const GEMINI_API_KEY = "AQ.Ab8RN6JSSuVliN0bv8CRU2IaoiMEJ2l4hz6Pfmduq39izd7VJA"; // Thay khóa API thực tế của bạn vào đây (Lấy tại aistudio.google.com)
+    const GEMINI_MODEL = "gemini-3.5-flash-lite"; 
+    const MAX_CONTEXT_MESSAGES = 4;   
+
+    // Quản lý phiên đăng nhập an toàn
+    const CURRENT_USER_KEY = 'hearth_active_user_session';
+    let memoryFallbackUser = null;
+
+    function getStoredUser() {
+      try {
+        const raw = localStorage.getItem(CURRENT_USER_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {
+        console.warn('LocalStorage không khả dụng.');
+      }
+      return memoryFallbackUser;
+    }
+
+    function setStoredUser(userObj) {
+      memoryFallbackUser = userObj;
+      try {
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userObj));
+      } catch (e) {
+        console.warn('Không thể ghi vào localStorage:', e);
+      }
+    }
+
+    function removeStoredUser() {
+      memoryFallbackUser = null;
+      try {
+        localStorage.removeItem(CURRENT_USER_KEY);
+      } catch (e) {}
+    }
+
+    let currentUser = getStoredUser();
+
+    const authOverlay = document.getElementById('authOverlay');
+    const mainAppContainer = document.getElementById('mainAppContainer');
+    const authForm = document.getElementById('authForm');
+
+    function updateAuthUI() {
+      currentUser = getStoredUser();
+      if (!currentUser) {
+        if (authOverlay) authOverlay.style.display = 'flex';
+        if (mainAppContainer) mainAppContainer.classList.remove('active');
+      } else {
+        if (authOverlay) authOverlay.style.display = 'none';
+        if (mainAppContainer) mainAppContainer.classList.add('active');
+        const famNameEl = document.getElementById('headerFamilyName');
+        const userBadgeEl = document.getElementById('headerUserBadge');
+        if (famNameEl) famNameEl.textContent = `(Mã: ${currentUser.familyCode})`;
+        if (userBadgeEl) userBadgeEl.textContent = `${currentUser.name} (${currentUser.role})`;
+        initAppForFamily();
+      }
+    }
+
+    if (authForm) {
+      authForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nameEl = document.getElementById('userName');
+        const roleEl = document.getElementById('userRole');
+        const familyCodeEl = document.getElementById('familyCode');
+
+        if (!nameEl || !familyCodeEl) return;
+
+        const name = nameEl.value.trim();
+        const role = roleEl.value;
+        const familyCode = familyCodeEl.value.trim().toLowerCase().replace(/\s+/g, '-');
+
+        if (!name || !familyCode) return;
+
+        const newUser = { name, role, familyCode };
+        setStoredUser(newUser);
+        updateAuthUI();
+      });
+    }
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        if (confirm('Bạn có muốn đăng xuất khỏi không gian gia đình này không?')) {
+          removeStoredUser();
+          updateAuthUI();
+        }
+      });
+    }
+
+    // Biến lưu trữ dữ liệu theo không gian gia đình
+    let CHAT_STORAGE_KEY, JOURNAL_STORAGE_KEY, COMMUNITY_STORAGE_KEY;
+    let chatHistories = {};
+    let communityPosts = [];
+    let entries = [];
+
+    function initAppForFamily() {
+      if (!currentUser) return;
+      const fam = currentUser.familyCode;
+      CHAT_STORAGE_KEY = `hearth_chat_${fam}`;
+      JOURNAL_STORAGE_KEY = `hearth_journal_${fam}`;
+      COMMUNITY_STORAGE_KEY = `hearth_community_${fam}`;
+
+      chatHistories = sanitizeHistories(loadFromStorage(CHAT_STORAGE_KEY, { checkin: [], mediator: [], gratitude: [] }));
+      communityPosts = loadFromStorage(COMMUNITY_STORAGE_KEY, [
+        { who: 'Gia đình', role: 'Hệ thống', text: `Chào mừng cả nhà đến với không gian chung của gia đình "${fam}"!`, meta: 'Vừa tạo' }
+      ]);
+      entries = loadFromStorage(JOURNAL_STORAGE_KEY, []);
+
+      renderEntries();
+      renderCommunityFeed();
+      renderChatLog();
+    }
+
+    function loadFromStorage(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return fallback;
+    }
+
+    function saveToStorage(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {}
+    }
+
+    function sanitizeHistories(histories) {
+      const cleaned = { checkin: [], mediator: [], gratitude: [] };
+      for (const mode of ['checkin', 'mediator', 'gratitude']) {
+        if (Array.isArray(histories?.[mode])) {
+          cleaned[mode] = histories[mode].map(msg => ({
+            role: msg.role,
+            text: msg.text,
+            ...(msg.error ? { error: msg.error } : {})
+          }));
+        }
+      }
+      return cleaned;
+    }
+
+    function saveChatHistories() {
+      if (!currentUser) return;
+      saveToStorage(CHAT_STORAGE_KEY, chatHistories);
+    }
+
+    // ---- Điều hướng Tab ----
+    const sections = document.querySelectorAll('main section');
+    const navBtns = document.querySelectorAll('nav button');
+    navBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        navBtns.forEach(b => b.classList.remove('active'));
+        sections.forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        const targetId = btn.dataset.target;
+        const targetSec = document.getElementById(targetId);
+        if (targetSec) targetSec.classList.add('active');
+      });
+    });
+
+    // ---- Cấu hình AI thông minh & Tốc độ cao ----
+    const modeNotes = {
+      checkin: "Lắng nghe và thấu hiểu cảm xúc hằng ngày.",
+      mediator: "Đồng hành thấu cảm, hóa giải mâu thuẫn gia đình.",
+      gratitude: "Gắn kết yêu thương, nhắn gửi những điều trân trọng."
+    };
+    const modeOpeners = {
+      checkin: "Hôm nay thế giới của bạn thế nào? Cứ thoải mái chia sẻ với Lắng nhé.",
+      mediator: "Lắng ở đây để nghe bạn trút bỏ mọi muộn phiền hoặc bức bối một cách an toàn và bảo mật.",
+      gratitude: "Bạn muốn nhắn nhủ điều ấm áp gì đến người thân hôm nay?"
+    };
+
+    function getDynamicSystemPrompt(mode) {
+      const userInfo = currentUser ? `Người đang trò chuyện tên là ${currentUser.name}, có vai trò là ${currentUser.role} trong gia đình.` : '';
+      const base = {
+        checkin: `${userInfo} Bạn tên là 'Lắng', trợ lý AI tâm lý gia đình ấm áp, sâu sắc. Hãy đọc kỹ tin nhắn của người dùng, thấu hiểu chính xác tâm trạng và hoàn cảnh của họ, sau đó phản hồi tự nhiên, ngắn gọn (2-3 câu), chân thành, tuyệt đối không dập khuôn, mang lại sự vỗ về và gợi mở tích cực bằng tiếng Việt.`,
+        mediator: `${userInfo} Bạn tên là 'Lắng', chuyên gia hòa giải và thấu cảm gia đình. Hãy lắng nghe câu chuyện cụ thể của người dùng, giúp họ hạ nhiệt cảm xúc, thấu hiểu góc nhìn đa chiều giữa cha mẹ và con cái, đồng thời gợi ý cách chia sẻ nhẹ nhàng, yêu thương bằng tiếng Việt.`,
+        gratitude: `${userInfo} Bạn tên là 'Lắng', trợ lý kết nối yêu thương gia đình. Hãy giúp người dùng chuyển hóa những mong muốn, lời cảm ơn hoặc nhắc nhở dành cho người thân thành những lời nhắn nhủ chân thành, tinh tế và dễ đón nhận bằng tiếng Việt.`
+      };
+      return base[mode] || base.checkin;
+    }
+
+    const chips = document.querySelectorAll('.listener-chip');
+    const chatLog = document.getElementById('chatLog');
+    const modeNote = document.getElementById('modeNote');
+    const sendBtn = document.getElementById('sendBtn');
+    const resetChatBtn = document.getElementById('resetChatBtn');
+    let currentMode = 'checkin';
+    const modeAbortControllers = { checkin: null, mediator: null, gratitude: null };
+    const modeStreamingText = { checkin: '', mediator: '', gratitude: '' };
+   
+    function renderChatLog() {
+      if (!currentUser || !chatLog) return;
+      chatLog.innerHTML = '';
+      addBubble(modeOpeners[currentMode], 'ai');
+      
+      if (Array.isArray(chatHistories[currentMode])) {
+        chatHistories[currentMode].forEach(msg => {
+          const who = msg.role === 'user' ? 'me' : 'ai';
+          addBubble(msg.text, who, msg.error);
+        });
+      }
+      if (modeAbortControllers[currentMode]) {
+        addBubble(modeStreamingText[currentMode] || 'Lắng đang suy nghĩ...', 'ai');
+      }
+      if (sendBtn) sendBtn.disabled = Boolean(modeAbortControllers[currentMode]);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentMode = chip.dataset.mode;
+        if (modeNote) modeNote.textContent = modeNotes[currentMode];
+        renderChatLog();
+      });
+    });
+
+    if (resetChatBtn) {
+      resetChatBtn.addEventListener('click', () => {
+        if (confirm('Bạn có chắc muốn làm mới cuộc trò chuyện này?')) {
+          if (modeAbortControllers[currentMode]) {
+            modeAbortControllers[currentMode].abort();
+            modeAbortControllers[currentMode] = null;
+          }
+          modeStreamingText[currentMode] = '';
+          chatHistories[currentMode] = [];
+          saveChatHistories();
+          renderChatLog();
+        }
+      });
+    }
+   
+    function addBubble(text, who, errorDetail = null) {
+      if (!chatLog) return;
+      const row = document.createElement('div');
+      row.className = 'bubble-row ' + who;
+
+      const div = document.createElement('div');
+      div.className = 'bubble ' + who;
+      div.textContent = text;
+      row.appendChild(div);
+
+      if (errorDetail) {
+        appendErrorBadge(row, errorDetail);
+      }
+
+      chatLog.appendChild(row);
+      chatLog.scrollTop = chatLog.scrollHeight;
+      return { row, div };
+    }
+
+    function appendErrorBadge(row, errorDetail) {
+      const badge = document.createElement('span');
+      badge.className = 'err-badge';
+      badge.textContent = '!';
+      const fullError = 'Lỗi kết nối AI: ' + errorDetail;
+      badge.setAttribute('data-error', fullError);
+      badge.setAttribute('title', fullError);
+      row.appendChild(badge);
+    }
+
+    // Gọi Gemini API chuẩn xác sử dụng streamGenerateContent
+    async function callGeminiAPI(mode, externalSignal, onChunk) {
+      const history = chatHistories[mode] || [];
+      const validMessages = history
+        .filter(msg => msg && typeof msg.text === 'string' && msg.text.trim() !== '' && !msg.error)
+        .slice(-MAX_CONTEXT_MESSAGES);
+
+      const contents = validMessages.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+      }));
+
+      const systemInstructionText = getDynamicSystemPrompt(mode);
+
+      const payload = {
+        system_instruction: {
+          parts: [{ text: systemInstructionText }]
+        },
+        contents: contents
+      };
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        signal: externalSignal
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.error?.message || `Lỗi HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const dataStr = trimmed.slice(5).trim();
+          if (!dataStr) continue;
+
+          try {
+            const chunk = JSON.parse(dataStr);
+            const textPart = chunk?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (textPart) {
+              fullText += textPart;
+              if (onChunk) onChunk(fullText);
+            }
+          } catch (e) {}
+        }
+      }
+
+      fullText = fullText.trim();
+      if (!fullText) {
+        throw new Error('Không nhận được phản hồi từ AI.');
+      }
+
+      return { text: fullText };
+    }
+   
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text || (sendBtn && sendBtn.disabled)) return;
+
+      if (GEMINI_API_KEY === "DÁN_API_KEY_CỦA_BẠN_VÀO_ĐÂY") {
+        alert("Vui lòng thay thế 'DÁN_API_KEY_CỦA_BẠN_VÀO_ĐÂY' bằng Gemini API Key thật của bạn trong mã nguồn!");
+        return;
+      }
+
+      const activeMode = currentMode;
+      addBubble(text, 'me');
+      input.value = '';
+      if (sendBtn) sendBtn.disabled = true;
+
+      if (!chatHistories[activeMode]) chatHistories[activeMode] = [];
+      chatHistories[activeMode].push({ role: 'user', text: text });
+      saveChatHistories();
+
+      modeStreamingText[activeMode] = '';
+      const loadingObj = addBubble('Lắng đang suy nghĩ...', 'ai');
+      const controller = new AbortController();
+      modeAbortControllers[activeMode] = controller;
+
+      try {
+        const result = await callGeminiAPI(activeMode, controller.signal, (partialText) => {
+          modeStreamingText[activeMode] = partialText;
+          if (currentMode === activeMode && loadingObj && chatLog.contains(loadingObj.row)) {
+            loadingObj.div.textContent = partialText;
+            chatLog.scrollTop = chatLog.scrollHeight;
+          }
+        });
+
+        chatHistories[activeMode].push({ role: 'model', text: result.text });
+        saveChatHistories();
+
+        if (currentMode === activeMode && loadingObj && chatLog.contains(loadingObj.row)) {
+          loadingObj.div.textContent = result.text;
+          chatLog.scrollTop = chatLog.scrollHeight;
+        }
+      } catch (error) {
+        if (error.name === 'AbortError' || error.message === 'ABORTED_BY_USER') return;
+
+        const errDetail = error.message || 'Lỗi kết nối.';
+        const fallbackText = `Lắng đã nhận được chia sẻ của bạn. Đã có lỗi xảy ra khi kết nối tới AI: ${errDetail}. Bạn vui lòng kiểm tra lại API Key hoặc mạng internet rồi thử lại nhé!`;
+        
+        chatHistories[activeMode].push({ role: 'model', text: fallbackText, error: errDetail });
+        saveChatHistories();
+
+        if (currentMode === activeMode && loadingObj && chatLog.contains(loadingObj.row)) {
+          loadingObj.div.textContent = fallbackText;
+          appendErrorBadge(loadingObj.row, errDetail);
+          chatLog.scrollTop = chatLog.scrollHeight;
+        }
+      } finally {
+        modeAbortControllers[activeMode] = null;
+        modeStreamingText[activeMode] = '';
+        if (currentMode === activeMode && sendBtn) {
+          sendBtn.disabled = false;
+          input.focus();
+        }
+      }
+    }
+
+    if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+    const chatInputEl = document.getElementById('chatInput');
+    if (chatInputEl) {
+      chatInputEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && sendBtn && !sendBtn.disabled) sendMessage();
+      });
+    }
+   
+    // Voice Recognition
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let activeRecognition = null;
+    let voiceStatusTimer = null;
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+
+    function setVoiceStatus(msg, isError) {
+      if (!voiceStatus) return;
+      clearTimeout(voiceStatusTimer);
+      voiceStatus.textContent = msg || '';
+      voiceStatus.classList.toggle('error', Boolean(isError));
+      voiceStatus.style.display = msg ? 'block' : 'none';
+      if (msg && isError) voiceStatusTimer = setTimeout(() => setVoiceStatus(''), 9000);
+    }
+
+    function voiceErrorMessage(code) {
+      switch (code) {
+        case 'not-allowed':
+        case 'service-not-allowed':
+          return window.self !== window.top
+            ? 'Mic bị chặn vì trang đang chạy trong khung nhúng (iframe). Hãy mở trang ở tab riêng.'
+            : 'Chưa có quyền dùng micro. Bấm biểu tượng ổ khóa cạnh thanh địa chỉ → cho phép Micrô → tải lại trang.';
+        case 'no-speech':
+          return 'Không nghe thấy giọng nói. Hãy nói to và gần micro hơn rồi thử lại.';
+        case 'audio-capture':
+          return 'Không tìm thấy micro. Hãy kiểm tra micro đã được cắm và bật chưa.';
+        case 'network':
+          return 'Lỗi mạng khi nhận diện giọng nói (cần internet). Brave và một số trình duyệt chặn tính năng này, hãy thử Chrome hoặc Edge.';
+        case 'language-not-supported':
+          return 'Trình duyệt chưa hỗ trợ nhận diện tiếng Việt.';
+        case 'aborted':
+          return '';
+        default:
+          return 'Lỗi nhận diện giọng nói: ' + code;
+      }
+    }
+
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', () => {
+        const input = document.getElementById('chatInput');
+        if (!input) return;
+        if (!SpeechRecognitionAPI) {
+          setVoiceStatus('Trình duyệt này không hỗ trợ nhận diện giọng nói. Hãy dùng Chrome, Edge hoặc Safari.', true);
+          return;
+        }
+        if (!window.isSecureContext) {
+          setVoiceStatus('Mic chỉ hoạt động khi trang chạy qua HTTPS hoặc localhost.', true);
+          return;
+        }
+        if (activeRecognition) {
+          const current = activeRecognition;
+          current.stop();
+          setTimeout(() => { if (activeRecognition === current) current.abort(); }, 3000);
+          return;
+        }
+
+        const recognition = new SpeechRecognitionAPI();
+        recognition.lang = 'vi-VN';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
+
+        const baseText = input.value.trim();
+        let finalText = '';
+        let gotResult = false;
+        let hadError = false;
+
+        recognition.onstart = () => {
+          voiceBtn.classList.add('recording');
+          setVoiceStatus('Đang lắng nghe… hãy nói gì đó.');
+        };
+        recognition.onresult = (event) => {
+          let interim = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const res = event.results[i];
+            if (res.isFinal) finalText += res[0].transcript + ' ';
+            else interim += res[0].transcript;
+          }
+          gotResult = true;
+          const spoken = (finalText + interim).trim();
+          input.value = [baseText, spoken].filter(Boolean).join(' ');
+        };
+        recognition.onerror = (event) => {
+          hadError = true;
+          setVoiceStatus(voiceErrorMessage(event.error), true);
+        };
+        recognition.onend = () => {
+          if (activeRecognition === recognition) activeRecognition = null;
+          voiceBtn.classList.remove('recording');
+          if (gotResult) { setVoiceStatus(''); input.focus(); }
+          else if (!hadError) setVoiceStatus('Chưa nghe thấy gì. Bấm 🎙 rồi nói lại nhé.', true);
+        };
+
+        activeRecognition = recognition;
+        setVoiceStatus('Đang bật micro… nếu trình duyệt hỏi quyền, hãy bấm "Cho phép".');
+        try {
+          recognition.start();
+        } catch (err) {
+          activeRecognition = null;
+          voiceBtn.classList.remove('recording');
+          setVoiceStatus('Không bật được micro: ' + (err.message || err.name), true);
+        }
+      });
+    }
+
+    // ---- Cộng đồng gia đình ----
+    function renderCommunityFeed() {
+      const feed = document.getElementById('feed');
+      if (!feed) return;
+      feed.innerHTML = '';
+      if (communityPosts.length === 0) {
+        feed.innerHTML = '<p style="font-size:13px;color:var(--teal-2);text-align:center;">Chưa có bài đăng nào trong không gian gia đình.</p>';
+        return;
+      }
+      communityPosts.forEach(item => {
+        const post = document.createElement('div');
+        post.className = 'post';
+
+        const whoDiv = document.createElement('div');
+        whoDiv.className = 'who';
+        whoDiv.innerHTML = `${item.who} <span style="color:var(--teal-2)">(${item.role || 'Thành viên'})</span> <span>${item.meta}</span>`;
+
+        const p = document.createElement('p');
+        p.textContent = item.text;
+
+        post.appendChild(whoDiv);
+        post.appendChild(p);
+        feed.appendChild(post);
+      });
+    }
+
+    function submitCommunityPost() {
+      const input = document.getElementById('postInput');
+      if (!input || !currentUser) return;
+      const text = input.value.trim();
+      if (!text) return;
+
+      communityPosts.unshift({
+        who: currentUser.name,
+        role: currentUser.role,
+        text: text,
+        meta: 'Vừa xong'
+      });
+      saveToStorage(COMMUNITY_STORAGE_KEY, communityPosts);
+      renderCommunityFeed();
+      input.value = '';
+    }
+
+    const postBtn = document.getElementById('postBtn');
+    if (postBtn) postBtn.addEventListener('click', submitCommunityPost);
+    const postInputEl = document.getElementById('postInput');
+    if (postInputEl) {
+      postInputEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') submitCommunityPost();
+      });
+    }
+
+    // ---- Nhật ký ----
+    function renderEntries() {
+      const list = document.getElementById('entryList');
+      if (!list) return;
+      list.innerHTML = '';
+      if (entries.length === 0) {
+        list.innerHTML = '<p style="font-size:13px;color:var(--teal-2)">Chưa có nhật ký nào được ghi lại.</p>';
+        return;
+      }
+      entries.slice().reverse().forEach(e => {
+        const card = document.createElement('div');
+        card.className = 'entry-card';
+
+        const timeEl = document.createElement('time');
+        timeEl.textContent = e.date + (e.shared ? ' · 🏡 Đã chia sẻ với gia đình' : ' · 🔒 Riêng tư');
+
+        const textNode = document.createTextNode(e.text);
+        card.appendChild(timeEl);
+        card.appendChild(textNode);
+        list.appendChild(card);
+      });
+    }
+
+    const journalSaveBtn = document.getElementById('journalSave');
+    if (journalSaveBtn) {
+      journalSaveBtn.addEventListener('click', () => {
+        const ta = document.getElementById('journalText');
+        if (!ta || !currentUser) return;
+        const text = ta.value.trim();
+        if (!text) return;
+        const shareEl = document.getElementById('journalShare');
+        const isShared = shareEl ? shareEl.checked : false;
+        const dateStr = new Date().toLocaleDateString('vi-VN', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+        entries.push({
+          text,
+          shared: isShared,
+          date: dateStr
+        });
+        saveToStorage(JOURNAL_STORAGE_KEY, entries);
+
+        if (isShared) {
+          communityPosts.unshift({
+            who: currentUser.name + ' (Nhật ký)',
+            role: currentUser.role,
+            text: text,
+            meta: dateStr
+          });
+          saveToStorage(COMMUNITY_STORAGE_KEY, communityPosts);
+          renderCommunityFeed();
+        }
+
+        ta.value = '';
+        if (shareEl) shareEl.checked = false;
+        renderEntries();
+      });
+    }
+
+    // Khởi chạy kiểm tra trạng thái đăng nhập ban đầu
+    updateAuthUI();
+  });
+</script>
+</body>
+</html>
