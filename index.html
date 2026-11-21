@@ -70,7 +70,7 @@
   main.active{ display:flex; }
   section{ display:none; padding:20px; max-width:640px; margin:0 auto; width:100%; }
   section.active{ display:block; }
- 
+
   /* --- Không gian AI Lắng --- */
   .listener-picker{ display:flex; gap:8px; overflow-x:auto; padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid var(--line);}
   .listener-chip{
@@ -79,7 +79,7 @@
     font-family:inherit; transition:all 0.15s ease;
   }
   .listener-chip.active{ background:var(--teal); border-color:var(--teal); color:var(--sand); }
-  
+
   .chat-header-bar{
     display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;
   }
@@ -92,7 +92,7 @@
   .reset-btn:hover{ background:var(--sand-2); color:var(--coral); border-color:var(--coral); }
 
   .chat-log{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; min-height:180px; }
-  
+
   .bubble-row{ display:flex; align-items:center; gap:8px; }
   .bubble-row.ai{ align-self:flex-start; max-width:85%; }
   .bubble-row.me{ align-self:flex-end; max-width:85%; justify-content:flex-end; }
@@ -129,13 +129,21 @@
   .round-btn:disabled{ opacity:0.5; cursor:not-allowed; }
   .voice-btn{ background:var(--coral); }
   .voice-btn.recording{ animation:pulseVoice 1.2s infinite ease-in-out; }
-  .voice-status{ font-size:12.5px; line-height:1.4; color:var(--teal-2); padding:0 6px 8px; }
-  .voice-status.error{ color:var(--coral); }
   @keyframes pulseVoice{
     0%, 100% { transform:scale(1); }
     50% { transform:scale(1.12); box-shadow:0 0 0 6px rgba(196,105,79,0.25); }
   }
- 
+
+  /* Thanh thông báo trạng thái micro */
+  .voice-status{
+    font-size:12.5px; color:var(--teal-2); margin-top:8px; padding-left:6px;
+    line-height:1.4; transition:opacity 0.2s ease;
+  }
+  .voice-status:empty{ display:none; }
+  .voice-status.listening{ color:var(--coral); font-weight:500; }
+  .voice-status.error{ color:var(--coral); }
+  .voice-status.success{ color:var(--teal); }
+
   /* --- Nhật ký --- */
   .journal-entry{ margin-bottom:18px; }
   .journal-entry label{ display:block; font-size:13px; color:var(--teal-2); margin-bottom:6px; }
@@ -154,7 +162,7 @@
   .past-entries h3{ font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin:0 0 10px; }
   .entry-card{ background:var(--white); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; font-size:14px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; }
   .entry-card time{ display:block; font-size:12px; color:var(--teal-2); margin-bottom:4px; }
- 
+
   /* --- Cộng đồng gia đình --- */
   .post{ background:var(--white); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:12px; }
   .post .who{ font-size:13px; font-weight:600; color:var(--teal); margin-bottom:4px; display:flex; justify-content:space-between; }
@@ -163,7 +171,7 @@
   .composer{ display:flex; gap:8px; margin-bottom:18px; }
   .composer input{ flex:1; padding:11px 14px; border-radius:100px; border:1px solid var(--line); background:var(--white); color:var(--ink); font-family:inherit; font-size:14.5px; }
   .composer input:focus{ outline:2px solid var(--teal); outline-offset:1px; }
- 
+
   nav{
     display:flex; border-top:1px solid var(--line); background:var(--white); flex-shrink:0;
     padding-bottom:env(safe-area-inset-bottom,0px);
@@ -205,42 +213,42 @@
     </form>
   </div>
 </div>
- 
+
 <header>
   <h1>Hearth <span id="headerFamilyName" style="font-size:13px; font-weight:400; color:var(--teal-2);"></span></h1>
   <div class="header-right">
     <span class="user-badge" id="headerUserBadge"></span>
-    <button class="logout-btn" id="logoutBtn" title="Đổi tài khoản">Đăng xuất</button>
+    <button type="button" class="logout-btn" id="logoutBtn" title="Đổi tài khoản">Đăng xuất</button>
   </div>
 </header>
- 
+
 <main id="mainAppContainer">
   <section id="listen" class="active">
     <div class="listener-picker">
-      <button class="listener-chip active" data-mode="checkin">Trò chuyện hằng ngày</button>
-      <button class="listener-chip" data-mode="mediator">Giải quyết mâu thuẫn</button>
-      <button class="listener-chip" data-mode="gratitude">Mong muốn/ Nhắc nhở</button>
+      <button type="button" class="listener-chip active" data-mode="checkin">Trò chuyện hằng ngày</button>
+      <button type="button" class="listener-chip" data-mode="mediator">Giải quyết mâu thuẫn</button>
+      <button type="button" class="listener-chip" data-mode="gratitude">Mong muốn/ Nhắc nhở</button>
     </div>
     <div class="chat-header-bar">
       <p class="mode-note" id="modeNote">Lắng nghe và thấu hiểu.</p>
-      <button class="reset-btn" id="resetChatBtn" title="Xóa đoạn chat chế độ này">🔄 Xóa hội thoại</button>
+      <button type="button" class="reset-btn" id="resetChatBtn" title="Xóa đoạn chat chế độ này">🔄 Xóa hội thoại</button>
     </div>
     <div class="chat-log" id="chatLog"></div>
-    <div class="voice-status" id="voiceStatus" role="status" aria-live="polite" style="display:none"></div>
     <div class="chat-input">
       <input type="text" id="chatInput" placeholder="Nhập tin nhắn hoặc dùng giọng nói…" aria-label="Message">
-      <button class="round-btn voice-btn" id="voiceBtn" title="Nhập bằng giọng nói" aria-label="Voice input">🎙</button>
-      <button class="round-btn" id="sendBtn" title="Gửi tin nhắn" aria-label="Send">↑</button>
+      <button type="button" class="round-btn voice-btn" id="voiceBtn" title="Nhập bằng giọng nói" aria-label="Voice input">🎙</button>
+      <button type="button" class="round-btn" id="sendBtn" title="Gửi tin nhắn" aria-label="Send">↑</button>
     </div>
+    <div class="voice-status" id="voiceStatus" aria-live="polite"></div>
   </section>
- 
+
   <section id="journal">
     <div class="journal-entry">
       <label for="journalText">Hôm nay bạn thấy thế nào?</label>
       <textarea id="journalText" placeholder="Nói ra suy nghĩ của bạn..."></textarea>
     </div>
     <div class="save-row">
-      <button class="save-btn" id="journalSave">Lưu nhật ký</button>
+      <button type="button" class="save-btn" id="journalSave">Lưu nhật ký</button>
       <label class="share-toggle"><input type="checkbox" id="journalShare"> Chia sẻ với gia đình</label>
     </div>
     <div class="past-entries">
@@ -248,30 +256,252 @@
       <div id="entryList"></div>
     </div>
   </section>
- 
+
   <section id="community">
     <div class="composer">
       <input type="text" id="postInput" placeholder="Chia sẻ lời nhắn hoặc khoảnh khắc với gia đình...">
-      <button class="round-btn" id="postBtn" title="Đăng bài">↑</button>
+      <button type="button" class="round-btn" id="postBtn" title="Đăng bài">↑</button>
     </div>
     <div id="feed"></div>
   </section>
 </main>
- 
+
 <nav>
-  <button class="active" data-target="listen"><span class="ic">💬</span>AI Lắng</button>
-  <button data-target="journal"><span class="ic">📔</span>Nhật ký</button>
-  <button data-target="community"><span class="ic">🏡</span>Cộng đồng nhà</button>
+  <button type="button" class="active" data-target="listen"><span class="ic">💬</span>AI Lắng</button>
+  <button type="button" data-target="journal"><span class="ic">📔</span>Nhật ký</button>
+  <button type="button" data-target="community"><span class="ic">🏡</span>Cộng đồng nhà</button>
 </nav>
- 
+
 <script>
-  // Đảm bảo toàn bộ mã chạy an toàn sau khi DOM đã tải xong
   document.addEventListener('DOMContentLoaded', () => {
 
     // ---- CẤU HÌNH GEMINI API ----
-    const GEMINI_API_KEY = "AQ.Ab8RN6JSSuVliN0bv8CRU2IaoiMEJ2l4hz6Pfmduq39izd7VJA"; // Thay khóa API thực tế của bạn vào đây (Lấy tại aistudio.google.com)
-    const GEMINI_MODEL = "gemini-3.5-flash-lite"; 
-    const MAX_CONTEXT_MESSAGES = 4;   
+    const GEMINI_API_KEY = "AQ.AQ.Ab8RN6Kv9rbcyIaWAvSo8L0Ut35dBPxC4lm-Ol6mzJar58mAyQ";
+    const GEMINI_MODEL = "gemini-3.5-flash-lite";
+    const MAX_CONTEXT_MESSAGES = 4;
+
+    // ---- Nhận diện giọng nói (Voice Recognition) ----
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let activeRecognition = null;
+    let isManualVoiceStop = false;
+    let voiceStopTimeout = null;
+    let voiceStatusTimeout = null;
+    let voiceBaseText = '';
+    let voiceGotResult = false;
+    let voiceHadError = false;
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatusEl = document.getElementById('voiceStatus');
+
+    function setVoiceStatus(message, type = '', autoClearMs = 0) {
+      if (!voiceStatusEl) return;
+      if (voiceStatusTimeout) {
+        clearTimeout(voiceStatusTimeout);
+        voiceStatusTimeout = null;
+      }
+      voiceStatusEl.textContent = message;
+      voiceStatusEl.className = 'voice-status' + (type ? ' ' + type : '');
+      if (autoClearMs > 0 && message) {
+        voiceStatusTimeout = setTimeout(() => {
+          voiceStatusEl.textContent = '';
+          voiceStatusEl.className = 'voice-status';
+        }, autoClearMs);
+      }
+    }
+
+    function resetVoiceUI() {
+      if (voiceStopTimeout) {
+        clearTimeout(voiceStopTimeout);
+        voiceStopTimeout = null;
+      }
+      activeRecognition = null;
+      const input = document.getElementById('chatInput');
+      if (voiceBtn) {
+        voiceBtn.classList.remove('recording');
+        voiceBtn.textContent = '🎙';
+        voiceBtn.title = 'Nhập bằng giọng nói';
+      }
+      if (input) {
+        input.placeholder = 'Nhập tin nhắn hoặc dùng giọng nói…';
+      }
+    }
+
+    function stopVoiceRecognition(immediateAbort = false) {
+      if (!activeRecognition) return;
+      isManualVoiceStop = true;
+      const rec = activeRecognition;
+      if (immediateAbort) {
+        try { rec.abort(); } catch (e) {}
+        resetVoiceUI();
+        setVoiceStatus('', '');
+        return;
+      }
+      setVoiceStatus('Đang xử lý giọng nói...', 'listening');
+      try {
+        rec.stop();
+      } catch (e) {
+        resetVoiceUI();
+        return;
+      }
+      // Dự phòng trường hợp trình duyệt treo sự kiện onend sau khi stop()
+      voiceStopTimeout = setTimeout(() => {
+        if (activeRecognition === rec) {
+          try { rec.abort(); } catch (e) {}
+          resetVoiceUI();
+        }
+      }, 2000);
+    }
+
+    function getVoiceErrorMessage(errorCode) {
+      switch (errorCode) {
+        case 'no-speech':
+          return 'Không nghe thấy giọng nói. Hãy kiểm tra micro không bị tắt tiếng và nói gần hơn nhé.';
+        case 'audio-capture':
+          return 'Không tìm thấy micro hoặc micro đang bị ứng dụng khác chiếm dụng.';
+        case 'not-allowed':
+          if (location.protocol === 'file:') {
+            return 'Trình duyệt chặn micro khi mở trực tiếp file HTML (file://). Hãy chạy qua localhost (ví dụ Live Server) hoặc HTTPS.';
+          }
+          return 'Bạn chưa cấp quyền Micro. Hãy bấm biểu tượng ổ khóa/cài đặt trên thanh địa chỉ để cho phép Micro rồi thử lại.';
+        case 'service-not-allowed':
+          return 'Dịch vụ nhận diện giọng nói bị chặn (trên iPhone/Mac hãy bật Đọc chính tả / Dictation trong Cài đặt).';
+        case 'network':
+          return 'Lỗi mạng khi kết nối dịch vụ giọng nói (trình duyệt Brave hoặc mạng chặn Google Speech sẽ gây lỗi này; hãy thử Chrome/Edge/Safari).';
+        case 'language-not-supported':
+          return 'Trình duyệt hiện tại không hỗ trợ nhận diện tiếng Việt.';
+        case 'aborted':
+          return '';
+        default:
+          return `Không thể nhận diện giọng nói (mã lỗi: ${errorCode || 'không xác định'}).`;
+      }
+    }
+
+    function startVoiceRecognition(langCode = 'vi-VN', isRetry = false) {
+      const input = document.getElementById('chatInput');
+      if (!input) return;
+
+      if (!SpeechRecognition) {
+        setVoiceStatus('⚠️ Trình duyệt này không hỗ trợ nhận diện giọng nói. Hãy dùng Chrome, Edge hoặc Safari nhé.', 'error', 6000);
+        return;
+      }
+
+      if (!window.isSecureContext && location.protocol !== 'file:') {
+        setVoiceStatus('⚠️ Trình duyệt yêu cầu kết nối HTTPS hoặc localhost để sử dụng Micro.', 'error', 6000);
+        return;
+      }
+
+      voiceBaseText = input.value.trim();
+      voiceGotResult = false;
+      voiceHadError = false;
+      isManualVoiceStop = false;
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = langCode;
+      recognition.continuous = false;    // Ổn định trên cả Android, iOS và Desktop
+      recognition.interimResults = true; // Hiện chữ trực tiếp trong lúc nói
+      recognition.maxAlternatives = 1;
+
+      // Gắn toàn bộ sự kiện TRƯỚC khi gọi recognition.start()
+      recognition.onstart = () => {
+        if (activeRecognition !== recognition) return;
+        setVoiceStatus('🔴 Đang lắng nghe... Hãy nói vào micro', 'listening');
+        input.placeholder = 'Đang lắng nghe...';
+      };
+
+      recognition.onaudiostart = () => {
+        if (activeRecognition !== recognition) return;
+        setVoiceStatus('🔴 Micro đã bật — hãy bắt đầu nói nhé', 'listening');
+      };
+
+      recognition.onspeechstart = () => {
+        if (activeRecognition !== recognition) return;
+        setVoiceStatus('🗣 Đang nhận diện giọng nói của bạn...', 'listening');
+      };
+
+      recognition.onresult = (event) => {
+        if (activeRecognition !== recognition) return;
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          const part = event.results[i][0]?.transcript?.trim() || '';
+          if (!part) continue;
+          if (transcript && part.toLowerCase().startsWith(transcript.toLowerCase())) {
+            transcript = part;
+          } else {
+            transcript = transcript ? `${transcript} ${part}` : part;
+          }
+        }
+        if (transcript) {
+          voiceGotResult = true;
+          input.value = voiceBaseText ? `${voiceBaseText} ${transcript}` : transcript;
+          input.scrollLeft = input.scrollWidth;
+        }
+      };
+
+      recognition.onnomatch = () => {
+        if (activeRecognition !== recognition) return;
+        voiceHadError = true;
+        setVoiceStatus('⚠️ Không nhận ra lời nói. Bạn hãy nói chậm và rõ hơn một chút nhé.', 'error', 4000);
+      };
+
+      recognition.onerror = (event) => {
+        if (activeRecognition !== recognition) return;
+
+        // Tự thử lại với 'vi' nếu trình duyệt không nhận 'vi-VN'
+        if (event.error === 'language-not-supported' && !isRetry) {
+          resetVoiceUI();
+          startVoiceRecognition('vi', true);
+          return;
+        }
+
+        if (event.error === 'aborted' && isManualVoiceStop) {
+          return;
+        }
+
+        voiceHadError = true;
+        const msg = getVoiceErrorMessage(event.error);
+        if (msg) {
+          setVoiceStatus('⚠️ ' + msg, 'error', 7000);
+        }
+      };
+
+      recognition.onend = () => {
+        if (activeRecognition !== recognition) return;
+        resetVoiceUI();
+        if (voiceGotResult) {
+          setVoiceStatus('✅ Đã nhận diện giọng nói', 'success', 2500);
+          input.focus();
+        } else if (!voiceHadError && !isManualVoiceStop) {
+          setVoiceStatus('⚠️ Không nghe thấy giọng nói. Hãy thử lại và nói gần micro hơn.', 'error', 4000);
+        } else if (isManualVoiceStop && !voiceHadError) {
+          setVoiceStatus('', '');
+        }
+      };
+
+      activeRecognition = recognition;
+      if (voiceBtn) {
+        voiceBtn.classList.add('recording');
+        voiceBtn.textContent = '⏹';
+        voiceBtn.title = 'Bấm để dừng ghi âm';
+      }
+      input.placeholder = 'Đang mở micro...';
+      setVoiceStatus('🎙 Đang khởi động micro...', 'listening');
+
+      try {
+        recognition.start();
+      } catch (err) {
+        resetVoiceUI();
+        setVoiceStatus('⚠️ Không thể khởi động micro: ' + (err.message || 'Vui lòng thử lại.'), 'error', 5000);
+      }
+    }
+
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', () => {
+        if (activeRecognition) {
+          stopVoiceRecognition(false);
+        } else {
+          startVoiceRecognition('vi-VN', false);
+        }
+      });
+    }
 
     // Quản lý phiên đăng nhập an toàn
     const CURRENT_USER_KEY = 'hearth_active_user_session';
@@ -350,6 +580,7 @@
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => {
         if (confirm('Bạn có muốn đăng xuất khỏi không gian gia đình này không?')) {
+          stopVoiceRecognition(true);
           removeStoredUser();
           updateAuthUI();
         }
@@ -418,6 +649,7 @@
     const navBtns = document.querySelectorAll('nav button');
     navBtns.forEach(btn => {
       btn.addEventListener('click', () => {
+        stopVoiceRecognition(true);
         navBtns.forEach(b => b.classList.remove('active'));
         sections.forEach(s => s.classList.remove('active'));
         btn.classList.add('active');
@@ -457,12 +689,12 @@
     let currentMode = 'checkin';
     const modeAbortControllers = { checkin: null, mediator: null, gratitude: null };
     const modeStreamingText = { checkin: '', mediator: '', gratitude: '' };
-   
+
     function renderChatLog() {
       if (!currentUser || !chatLog) return;
       chatLog.innerHTML = '';
       addBubble(modeOpeners[currentMode], 'ai');
-      
+
       if (Array.isArray(chatHistories[currentMode])) {
         chatHistories[currentMode].forEach(msg => {
           const who = msg.role === 'user' ? 'me' : 'ai';
@@ -478,6 +710,7 @@
 
     chips.forEach(chip => {
       chip.addEventListener('click', () => {
+        stopVoiceRecognition(true);
         chips.forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         currentMode = chip.dataset.mode;
@@ -489,6 +722,7 @@
     if (resetChatBtn) {
       resetChatBtn.addEventListener('click', () => {
         if (confirm('Bạn có chắc muốn làm mới cuộc trò chuyện này?')) {
+          stopVoiceRecognition(true);
           if (modeAbortControllers[currentMode]) {
             modeAbortControllers[currentMode].abort();
             modeAbortControllers[currentMode] = null;
@@ -500,7 +734,7 @@
         }
       });
     }
-   
+
     function addBubble(text, who, errorDetail = null) {
       if (!chatLog) return;
       const row = document.createElement('div');
@@ -530,7 +764,6 @@
       row.appendChild(badge);
     }
 
-    // Gọi Gemini API chuẩn xác sử dụng streamGenerateContent
     async function callGeminiAPI(mode, externalSignal, onChunk) {
       const history = chatHistories[mode] || [];
       const validMessages = history
@@ -604,12 +837,17 @@
 
       return { text: fullText };
     }
-   
+
     async function sendMessage() {
       const input = document.getElementById('chatInput');
       if (!input) return;
       const text = input.value.trim();
       if (!text || (sendBtn && sendBtn.disabled)) return;
+
+      // Dừng micro ngay trước khi gửi để tránh bị chèn ngược chữ sau khi xóa ô nhập
+      if (activeRecognition) {
+        stopVoiceRecognition(true);
+      }
 
       if (GEMINI_API_KEY === "DÁN_API_KEY_CỦA_BẠN_VÀO_ĐÂY") {
         alert("Vui lòng thay thế 'DÁN_API_KEY_CỦA_BẠN_VÀO_ĐÂY' bằng Gemini API Key thật của bạn trong mã nguồn!");
@@ -651,7 +889,7 @@
 
         const errDetail = error.message || 'Lỗi kết nối.';
         const fallbackText = `Lắng đã nhận được chia sẻ của bạn. Đã có lỗi xảy ra khi kết nối tới AI: ${errDetail}. Bạn vui lòng kiểm tra lại API Key hoặc mạng internet rồi thử lại nhé!`;
-        
+
         chatHistories[activeMode].push({ role: 'model', text: fallbackText, error: errDetail });
         saveChatHistories();
 
@@ -677,112 +915,6 @@
         if (e.key === 'Enter' && sendBtn && !sendBtn.disabled) sendMessage();
       });
     }
-   
-    // Voice Recognition
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let activeRecognition = null;
-    let voiceStatusTimer = null;
-    const voiceBtn = document.getElementById('voiceBtn');
-    const voiceStatus = document.getElementById('voiceStatus');
-
-    function setVoiceStatus(msg, isError) {
-      if (!voiceStatus) return;
-      clearTimeout(voiceStatusTimer);
-      voiceStatus.textContent = msg || '';
-      voiceStatus.classList.toggle('error', Boolean(isError));
-      voiceStatus.style.display = msg ? 'block' : 'none';
-      if (msg && isError) voiceStatusTimer = setTimeout(() => setVoiceStatus(''), 9000);
-    }
-
-    function voiceErrorMessage(code) {
-      switch (code) {
-        case 'not-allowed':
-        case 'service-not-allowed':
-          return window.self !== window.top
-            ? 'Mic bị chặn vì trang đang chạy trong khung nhúng (iframe). Hãy mở trang ở tab riêng.'
-            : 'Chưa có quyền dùng micro. Bấm biểu tượng ổ khóa cạnh thanh địa chỉ → cho phép Micrô → tải lại trang.';
-        case 'no-speech':
-          return 'Không nghe thấy giọng nói. Hãy nói to và gần micro hơn rồi thử lại.';
-        case 'audio-capture':
-          return 'Không tìm thấy micro. Hãy kiểm tra micro đã được cắm và bật chưa.';
-        case 'network':
-          return 'Lỗi mạng khi nhận diện giọng nói (cần internet). Brave và một số trình duyệt chặn tính năng này, hãy thử Chrome hoặc Edge.';
-        case 'language-not-supported':
-          return 'Trình duyệt chưa hỗ trợ nhận diện tiếng Việt.';
-        case 'aborted':
-          return '';
-        default:
-          return 'Lỗi nhận diện giọng nói: ' + code;
-      }
-    }
-
-    if (voiceBtn) {
-      voiceBtn.addEventListener('click', () => {
-        const input = document.getElementById('chatInput');
-        if (!input) return;
-        if (!SpeechRecognitionAPI) {
-          setVoiceStatus('Trình duyệt này không hỗ trợ nhận diện giọng nói. Hãy dùng Chrome, Edge hoặc Safari.', true);
-          return;
-        }
-        if (!window.isSecureContext) {
-          setVoiceStatus('Mic chỉ hoạt động khi trang chạy qua HTTPS hoặc localhost.', true);
-          return;
-        }
-        if (activeRecognition) {
-          const current = activeRecognition;
-          current.stop();
-          setTimeout(() => { if (activeRecognition === current) current.abort(); }, 3000);
-          return;
-        }
-
-        const recognition = new SpeechRecognitionAPI();
-        recognition.lang = 'vi-VN';
-        recognition.interimResults = true;
-        recognition.continuous = false;
-        recognition.maxAlternatives = 1;
-
-        const baseText = input.value.trim();
-        let finalText = '';
-        let gotResult = false;
-        let hadError = false;
-
-        recognition.onstart = () => {
-          voiceBtn.classList.add('recording');
-          setVoiceStatus('Đang lắng nghe… hãy nói gì đó.');
-        };
-        recognition.onresult = (event) => {
-          let interim = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const res = event.results[i];
-            if (res.isFinal) finalText += res[0].transcript + ' ';
-            else interim += res[0].transcript;
-          }
-          gotResult = true;
-          const spoken = (finalText + interim).trim();
-          input.value = [baseText, spoken].filter(Boolean).join(' ');
-        };
-        recognition.onerror = (event) => {
-          hadError = true;
-          setVoiceStatus(voiceErrorMessage(event.error), true);
-        };
-        recognition.onend = () => {
-          if (activeRecognition === recognition) activeRecognition = null;
-          voiceBtn.classList.remove('recording');
-          if (gotResult) { setVoiceStatus(''); input.focus(); }
-          else if (!hadError) setVoiceStatus('Chưa nghe thấy gì. Bấm 🎙 rồi nói lại nhé.', true);
-        };
-
-        activeRecognition = recognition;
-        setVoiceStatus('Đang bật micro… nếu trình duyệt hỏi quyền, hãy bấm "Cho phép".');
-        try {
-          recognition.start();
-        } catch (err) {
-          activeRecognition = null;
-          voiceBtn.classList.remove('recording');
-          setVoiceStatus('Không bật được micro: ' + (err.message || err.name), true);
-        }
-      });
-    }
 
     // ---- Cộng đồng gia đình ----
     function renderCommunityFeed() {
@@ -799,7 +931,22 @@
 
         const whoDiv = document.createElement('div');
         whoDiv.className = 'who';
-        whoDiv.innerHTML = `${item.who} <span style="color:var(--teal-2)">(${item.role || 'Thành viên'})</span> <span>${item.meta}</span>`;
+
+        const authorSpan = document.createElement('span');
+        authorSpan.style.fontWeight = '600';
+        authorSpan.style.color = 'var(--teal)';
+        authorSpan.textContent = item.who + ' ';
+
+        const roleSpan = document.createElement('span');
+        roleSpan.style.color = 'var(--teal-2)';
+        roleSpan.textContent = `(${item.role || 'Thành viên'})`;
+        authorSpan.appendChild(roleSpan);
+
+        const metaSpan = document.createElement('span');
+        metaSpan.textContent = item.meta;
+
+        whoDiv.appendChild(authorSpan);
+        whoDiv.appendChild(metaSpan);
 
         const p = document.createElement('p');
         p.textContent = item.text;
